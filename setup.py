@@ -26,9 +26,10 @@ setup(
         'trezorlib.tx_api',
         'trezorlib.types_pb2',
     ],
-    scripts = ['trezorctl'],
+    scripts=['trezorctl'],
     test_suite='tests',
-    install_requires=['ecdsa>=0.9', 'protobuf==2.5.0', 'mnemonic>=0.8', 'hidapi>=0.7.99'],
+    install_requires=['ecdsa>=0.9', 'protobuf==2.5.0', 'mnemonic>=0.8', 'hidapi>=0.7.99', 'bitcoin>=1.1.25',
+                      'secretsharing>=0.2.6'],
     include_package_data=True,
     zip_safe=False,
     classifiers=[
