@@ -119,7 +119,7 @@ class Commands(object):
 
     def recover_seed(self, args):
         seed = SSSS.recover_secret(args.shares[:args.threshold])
-        return bip32_master_key(seed) #todo: check this result
+        return bip32_master_key(unhexlify(seed))
 
     recover_seed.help = 'Uses ssss binaries to recover seed from shares'
     recover_seed.arguments = recover_mnemonic.arguments
