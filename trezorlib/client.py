@@ -24,6 +24,8 @@ from mnemonic import Mnemonic
 
 SCREENSHOT = False
 
+DEFAULT_CURVE = 'secp256k1'
+
 # monkeypatching: text formatting of protobuf messages
 tools.monkeypatch_google_protobuf_text_format()
 
@@ -174,6 +176,10 @@ class TextUIMixin(object):
         else:
             desc = 'PIN'
 
+        log("Use the numeric keypad to describe number positions. The layout is:")
+        log("    7 8 9")
+        log("    4 5 6")
+        log("    1 2 3")
         log("Please enter %s: " % desc)
         pin = getpass.getpass('')
         return proto.PinMatrixAck(pin=pin)
@@ -385,9 +391,9 @@ class ProtocolMixin(object):
         return path
 
     @expect(proto.PublicKey)
-    def get_public_node(self, n):
+    def get_public_node(self, n, ecdsa_curve_name=DEFAULT_CURVE):
         n = self._convert_prime(n)
-        return self.call(proto.GetPublicKey(address_n=n))
+        return self.call(proto.GetPublicKey(address_n=n, ecdsa_curve_name=ecdsa_curve_name))
 
     @field('address')
     @expect(proto.Address)
@@ -459,8 +465,8 @@ class ProtocolMixin(object):
         return self.call(proto.SignMessage(coin_name=coin_name, address_n=n, message=message))
 
     @expect(proto.SignedIdentity)
-    def sign_identity(self, identity, challenge_hidden, challenge_visual):
-        return self.call(proto.SignIdentity(identity=identity, challenge_hidden=challenge_hidden, challenge_visual=challenge_visual))
+    def sign_identity(self, identity, challenge_hidden, challenge_visual, ecdsa_curve_name=DEFAULT_CURVE):
+        return self.call(proto.SignIdentity(identity=identity, challenge_hidden=challenge_hidden, challenge_visual=challenge_visual, ecdsa_curve_name=ecdsa_curve_name))
 
     def verify_message(self, address, signature, message):
         try:
@@ -538,7 +544,10 @@ class ProtocolMixin(object):
                 continue
 
             tx = msg.transactions.add()
-            tx.CopyFrom(self.tx_api.get_tx(binascii.hexlify(inp.prev_hash)))
+            if self.tx_api:
+                tx.CopyFrom(self.tx_api.get_tx(binascii.hexlify(inp.prev_hash)))
+            else:
+                raise Exception('TX_API not defined')
             known_hashes.append(inp.prev_hash)
 
         return msg
@@ -560,7 +569,10 @@ class ProtocolMixin(object):
             if inp.prev_hash in known_hashes:
                 continue
 
-            txes[inp.prev_hash] = self.tx_api.get_tx(binascii.hexlify(inp.prev_hash))
+            if self.tx_api:
+                txes[inp.prev_hash] = self.tx_api.get_tx(binascii.hexlify(inp.prev_hash))
+            else:
+                raise Exception('TX_API not defined')
             known_hashes.append(inp.prev_hash)
 
         return txes
